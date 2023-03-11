@@ -13,7 +13,7 @@ CORS(app)
 
 def getGame(id):
 
-    url = "http://api.turftown.in/api/v2/game/share/"+id
+    url = "https://api.turftown.in/api/v2/game/share/"+id
     
     payload={}
     headers = {}
