@@ -1,0 +1,15 @@
+# Generated output files
+generated/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+
+# macOS
+.DS_Store
+
+# Kilo workspace config
+.kilo/

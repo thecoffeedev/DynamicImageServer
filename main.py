@@ -1,10 +1,12 @@
-from flask import Flask, make_response, request
-from PIL import Image, ImageDraw, ImageFont
+from flask import Flask, abort, make_response, request
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+import io
 import os
 from flask_cors import CORS, cross_origin
 import requests
 import datetime
 import json
+import random
 
 
 app = Flask(__name__)
@@ -94,42 +96,45 @@ def image_endpoint():
     gameKind = game['gameKind']
     img = Image.new('RGB', (1200, 630), color='white')
     draw = ImageDraw.Draw(img)
-    bg = Image.open('BG.png')
+    bg = Image.open('assets/image/BG.png')
     img.paste(bg, (0, 0))
     text = "Join my Game on"
     try:
-     font = ImageFont.truetype('Nexa-Trial-Heavy.ttf', 80)
+     font = ImageFont.truetype('assets/fonts/Nexa-Trial-Heavy.ttf', 80)
     except:
-        permission = oct(os.stat('Nexa/Commercial/Nexa_V2_2020/TTF/NexaDemo-Bold.ttf').st_mode)[-3:]
+        permission = oct(os.stat('assets/fonts/NexaDemo-Bold.ttf').st_mode)[-3:]
         font = ImageFont.load_default()
     
     
     draw.text((70, 50), text, fill='white', font=font)
-    calender = Image.open('Date.png')
+    calender = Image.open('assets/image/Date.png')
     img.paste(calender, (70, 430), calender)
-    timer = Image.open('Time.png')
+    timer = Image.open('assets/image/Time.png')
     img.paste(timer, (70, 530), timer)
-    location = Image.open('Court.png')
+    location = Image.open('assets/image/Court.png')
     court = Image.open(requests.get(courtImage, stream=True).raw)
     court = court.resize((274, 273))
     img.paste(court, (800, 120), location)
-    game = Image.open('TurfTownLogo.png')
+    game = Image.open('assets/image/TurfTownLogo.png')
     img.paste(game, (70, 180), game)
-    micro = Image.open('MicroBanner.png')
+    micro = Image.open('assets/image/MicroBanner.png')
     img.paste(micro, (850, 350), micro)
-    font = ImageFont.truetype('NexaText-Trial-Bold.ttf', 37)
+    font = ImageFont.truetype('assets/fonts/NexaText-Trial-Bold.ttf', 37)
     text = vs if vs is not None else "6 v 6"
-    text_width, text_height = draw.textsize(text, font)
+    #text_width, text_height = draw.textsize(text, font)
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]  # Width of the text
+    text_height = bbox[3] - bbox[1]  # Height of the text
     text_x = (micro.width - text_width) / 2 + 850
     text_y = (micro.height - text_height) / 2 + 340
     # Nexa-Text Regular
     
     draw.text((text_x, text_y), text, fill='white', font=font)
-    font = ImageFont.truetype('NexaText-Trial-Regular.ttf', 47)
+    font = ImageFont.truetype('assets/fonts/NexaText-Trial-Regular.ttf', 47)
     if date is None:
         date = "Wed . Aug 21st"
     draw.text((150, 428), date, fill='white', font=font)
-    font = ImageFont.truetype('NexaText-Trial-Regular.ttf', 47)
+    font = ImageFont.truetype('assets/fonts/NexaText-Trial-Regular.ttf', 47)
 
     if time is None:
         time = "7:00 pm - 10:30 pm"
@@ -137,11 +142,12 @@ def image_endpoint():
 
     if gameKind is None:
         gameKind = "Football"
-    burn = Image.open(gameKind+".png")
+    burn = Image.open('assets/image/' + gameKind.lower() + '.png')
     img.paste(burn, (1040, 470), burn)
-    img = img.resize((int(img.width/2), int(img.height/2)), Image.ANTIALIAS)
-    img.save('image.jpeg')
-    response = make_response(open('image.jpeg', 'rb').read())
+    #img = img.resize((int(img.width/2), int(img.height/2)), Image.ANTIALIAS)
+    img = img.resize((int(img.width/2), int(img.height/2)), resample=Image.LANCZOS)
+    img.save('generated/image.jpeg')
+    response = make_response(open('generated/image.jpeg', 'rb').read())
     response.headers.set('Content-Type', 'image/jpeg')
     return response
 
@@ -181,20 +187,20 @@ def venue_endpoint():
     print(spotlight_picture, rating, area, address, name)
     img = Image.new('RGB', (1200, 630), color='white')
     draw = ImageDraw.Draw(img)
-    bg = Image.open('venue/venueBG.png')
+    bg = Image.open('assets/venue/venueBG.png')
     img.paste(bg, (0, 0))
     text_line1 = "Check this"
     text_line2 = "venue out on"
     try:
-        font = ImageFont.truetype('Nexa-Trial-Heavy.ttf', 100)
+        font = ImageFont.truetype('assets/fonts/Nexa-Trial-Heavy.ttf', 100)
     except:
-        permission = oct(os.stat('Nexa/Commercial/Nexa_V2_2020/TTF/NexaDemo-Bold.ttf').st_mode)[-3:]
+        permission = oct(os.stat('assets/fonts/NexaDemo-Bold.ttf').st_mode)[-3:]
         font = ImageFont.load_default()
     draw.text((70, 90), text_line1, fill='white', font=font)
     draw.text((70, 220), text_line2, fill='white', font=font)
 
     # logo below the text turfLogo
-    turfLogo = Image.open('venue/turfLogo.png')
+    turfLogo = Image.open('assets/venue/turfLogo.png')
     img.paste(turfLogo, (73, 390), turfLogo)
 
     venueImage = Image.open(requests.get(spotlight_picture, stream=True).raw).convert("RGBA")
@@ -203,28 +209,114 @@ def venue_endpoint():
     img.paste(venueImage, (800, 120), venueImage)
 
     # add emptyRatingsBanner under the venueImage
-    emptyRatingsBanner = Image.open('venue/emptyRatingsBanner.png')
+    emptyRatingsBanner = Image.open('assets/venue/emptyRatingsBanner.png')
     img.paste(emptyRatingsBanner, (820, 360), emptyRatingsBanner)
 
     # add rating on the emptyRatingsBanner where ratings is two decimal points
     rating  = float(rating)
     rating = str(rating)
-    font = ImageFont.truetype('Nexa-Trial-Heavy.ttf', 60)
+    font = ImageFont.truetype('assets/fonts/Nexa-Trial-Heavy.ttf', 60)
     draw.text((890, 390), rating, fill='white', font=font)
 
     # add StarVenue.png after the rating
-    starVenue = Image.open('venue/StarVenue.png')
+    starVenue = Image.open('assets/venue/StarVenue.png')
     img.paste(starVenue, (1000, 400), starVenue)
 
-    font = ImageFont.truetype('NexaText-Trial-Bold.ttf', 37)
+    font = ImageFont.truetype('assets/fonts/NexaText-Trial-Bold.ttf', 37)
     text = name
-    img.save('venue/venue.jpeg')
-    response = make_response(open('venue/venue.jpeg', 'rb').read())
+    img.save('generated/venue.jpeg')
+    response = make_response(open('generated/venue.jpeg', 'rb').read())
     response.headers.set('Content-Type', 'image/jpeg')
 
 
     return response
     
 
+def hex_mask_from_frame(frame_img, inset_ratio=0.922):
+    w, h = frame_img.size
+    alpha = frame_img.split()[-1]
+    inset_w = int(w * inset_ratio)
+    inset_h = int(h * inset_ratio)
+    small = alpha.resize((inset_w, inset_h), Image.LANCZOS)
+    mask = Image.new('L', (w, h), 0)
+    mask.paste(small, ((w - inset_w) // 2, (h - inset_h) // 2))
+    return mask
+
+
+def _load_font(path, size):
+    try:
+        return ImageFont.truetype(path, size)
+    except Exception:
+        return ImageFont.load_default()
+
+
+@app.route('/host')
+def host_endpoint():
+    name = request.args.get('name')
+    image_url = request.args.get('image')
+    subtitle = request.args.get('text', 'Come join my games!')
+
+    if not name:
+        abort(400, description="Missing required 'name' parameter.")
+    if not image_url:
+        abort(400, description="Missing required 'image' parameter.")
+    if not image_url.startswith(('http://', 'https://')):
+        abort(400, description="Invalid 'image' URL.")
+
+    try:
+        img = Image.open('assets/host/host_og_background.png').convert('RGB')
+    except Exception as exc:
+        abort(500, description=f"Failed to load background asset: {exc}")
+
+    draw = ImageDraw.Draw(img)
+
+    frame_color = random.choice(['blue', 'brown', 'violet', 'green', 'purple'])
+    try:
+        frame = Image.open('assets/host/frame_' + frame_color + '.png').convert('RGBA')
+    except Exception as exc:
+        abort(500, description=f"Failed to load frame asset: {exc}")
+
+    pic_box = (952, 106, 500, 556)
+    frame = frame.resize((pic_box[2], pic_box[3]), Image.LANCZOS)
+    img.paste(frame, (pic_box[0], pic_box[1]), frame)
+
+    try:
+        photo_response = requests.get(image_url, stream=True, timeout=15)
+        photo_response.raise_for_status()
+        photo = Image.open(photo_response.raw).convert('RGB')
+    except Exception as exc:
+        abort(400, description=f"Failed to fetch or open image: {exc}")
+
+    mask = hex_mask_from_frame(frame)
+
+    target_w, target_h = pic_box[2], pic_box[3]
+    photo = ImageOps.fit(photo, (target_w, target_h), method=Image.LANCZOS)
+    img.paste(photo, (pic_box[0], pic_box[1]), mask)
+
+    name_font = _load_font('assets/fonts/nexaandnexatextotf/Fontfabric - Nexa Extra Bold.otf', 128)
+    name_box = (879, 710, 640, 180)
+    bbox = draw.textbbox((0, 0), name, font=name_font)
+    text_x = name_box[0] + (name_box[2] - (bbox[2] - bbox[0])) / 2
+    text_y = name_box[1] + (name_box[3] - (bbox[3] - bbox[1])) / 2
+    draw.text((text_x, text_y), name, fill='#E1E2E5', font=name_font)
+
+    body_font = _load_font('assets/fonts/nexaandnexatextotf/Fontfabric - Nexa Text Bold.otf', 112)
+    body_box = (642, 923, 1118, 156)
+    bbox = draw.textbbox((0, 0), subtitle, font=body_font)
+    text_x = body_box[0] + (body_box[2] - (bbox[2] - bbox[0])) / 2
+    text_y = body_box[1] + (body_box[3] - (bbox[3] - bbox[1])) / 2
+    draw.text((text_x, text_y), subtitle, fill='#B4B4B8', font=body_font)
+
+    img = img.resize((int(img.width / 2), int(img.height / 2)), resample=Image.LANCZOS)
+
+    buffer = io.BytesIO()
+    img.save(buffer, format='JPEG', quality=90)
+    buffer.seek(0)
+
+    response = make_response(buffer.read())
+    response.headers.set('Content-Type', 'image/jpeg')
+    return response
+
+
 if __name__ == '__main__':
-    app.run(host="0.0.0.0",debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
