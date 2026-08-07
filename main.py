@@ -142,7 +142,10 @@ def image_endpoint():
 
     if gameKind is None:
         gameKind = "Football"
-    burn = Image.open('assets/image/' + gameKind.lower() + '.png')
+    icon_path = 'assets/image/' + gameKind.lower() + '.png'
+    if not os.path.exists(icon_path):
+        icon_path = 'assets/image/football.png'
+    burn = Image.open(icon_path)
     img.paste(burn, (1040, 470), burn)
     #img = img.resize((int(img.width/2), int(img.height/2)), Image.ANTIALIAS)
     img = img.resize((int(img.width/2), int(img.height/2)), resample=Image.LANCZOS)
