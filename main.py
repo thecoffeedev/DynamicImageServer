@@ -149,9 +149,10 @@ def image_endpoint():
     img.paste(burn, (1040, 470), burn)
     #img = img.resize((int(img.width/2), int(img.height/2)), Image.ANTIALIAS)
     img = img.resize((int(img.width/2), int(img.height/2)), resample=Image.LANCZOS)
-    os.makedirs('generated', exist_ok=True)
-    img.save('generated/image.jpeg')
-    response = make_response(open('generated/image.jpeg', 'rb').read())
+    buffer = io.BytesIO()
+    img.save(buffer, format='JPEG', quality=90)
+    buffer.seek(0)
+    response = make_response(buffer.read())
     response.headers.set('Content-Type', 'image/jpeg')
     return response
 
@@ -228,9 +229,10 @@ def venue_endpoint():
 
     font = ImageFont.truetype('assets/fonts/NexaText-Trial-Bold.ttf', 37)
     text = name
-    os.makedirs('generated', exist_ok=True)
-    img.save('generated/venue.jpeg')
-    response = make_response(open('generated/venue.jpeg', 'rb').read())
+    buffer = io.BytesIO()
+    img.save(buffer, format='JPEG', quality=90)
+    buffer.seek(0)
+    response = make_response(buffer.read())
     response.headers.set('Content-Type', 'image/jpeg')
 
 
