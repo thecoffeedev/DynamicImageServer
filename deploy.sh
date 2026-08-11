@@ -5,6 +5,9 @@ IMAGE_NAME="og_banner_gen:v2"
 CONTAINER_NAME="og_banner_generator_v2"
 PORT_MAPPING="5000:5000"
 
+echo "Pulling latest code..."
+git pull origin main
+
 echo "Stopping and removing old container: $CONTAINER_NAME"
 docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
 docker rm "$CONTAINER_NAME" >/dev/null 2>&1 || true
