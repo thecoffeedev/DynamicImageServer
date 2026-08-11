@@ -146,7 +146,11 @@ def image_endpoint():
     if not os.path.exists(icon_path):
         icon_path = 'assets/image/football.png'
     burn = Image.open(icon_path)
-    img.paste(burn, (1040, 470), burn)
+    # Push pickleball and badminton slightly into the corner so they get cropped
+    if gameKind.lower() in ('pickleball', 'badminton'):
+        img.paste(burn, (1065, 495), burn)
+    else:
+        img.paste(burn, (1040, 470), burn)
     #img = img.resize((int(img.width/2), int(img.height/2)), Image.ANTIALIAS)
     img = img.resize((int(img.width/2), int(img.height/2)), resample=Image.LANCZOS)
     buffer = io.BytesIO()
